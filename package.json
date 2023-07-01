@@ -26,7 +26,7 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "test:unit": "mocha --require ts-node/register src/test/unit/esm_to_cjs.test.ts"
+    "test:unit": "mocha out/test/unit/esm_to_cjs.test.js"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
