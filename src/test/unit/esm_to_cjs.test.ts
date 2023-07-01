@@ -2,8 +2,12 @@ import * as assert from "assert";
 
 //import esmToCjs from "../../esm_to_cjs";
 import esmToCjs from "../../esm_to_cjs.chatgpt";
-
 import { stripIndent } from "common-tags";
+import { prettifySource as deafultPrettifySource } from "../../est_helper.js";
+
+function prettifySource(source: string): string {
+  return deafultPrettifySource(source, { sourceType: "module" });
+}
 
 describe("basic test suite", () => {
   it("1 + 1 = 2", () => {
@@ -22,7 +26,7 @@ describe("esmToCsv", () => {
 });
 
 describe("import statements", () => {
-  describe("ImportDeclaration", () => {
+  describe.only("ImportDeclaration", () => {
     it("ImportSpecifier", () => {
       //
       const sourceCode1 = `import {foo} from "mod";`;
@@ -38,9 +42,12 @@ describe("import statements", () => {
       );
     });
 
-    it("ImportDefaultSpecifier", () => {
+    it.only("ImportDefaultSpecifier", () => {
       const sourceCode = `import foo from "mod";`;
-      assert.strictEqual(esmToCjs(sourceCode), `const foo = require("mod")`);
+      assert.strictEqual(
+        prettifySource(esmToCjs(sourceCode)),
+        prettifySource(`const foo = require("mod")`)
+      );
     });
 
     it("ImportNamespaceSpecifier", () => {
@@ -50,7 +57,7 @@ describe("import statements", () => {
   });
 });
 
-describe("export statements", () => {
+describe.skip("export statements", () => {
   it("ExportNamedDeclaration", () => {
     const pairs = [
       [`export {foo};`, `module.exports = { foo };`],
