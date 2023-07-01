@@ -15,7 +15,7 @@
     "commands": [
       {
         "command": "jangxyz-esm-to-cjs-clipboard.helloWorld",
-        "title": "Hello World"
+        "title": "Copy ESM imports to CommonJS requires into clipboard"
       }
     ]
   },
@@ -30,6 +30,7 @@
   },
   "devDependencies": {
     "@types/common-tags": "^1.8.1",
+    "@types/estree": "^1.0.1",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.1",
     "@types/node": "20.2.5",
@@ -41,9 +42,13 @@
     "common-tags": "^1.8.2",
     "escodegen": "^2.1.0",
     "eslint": "^8.41.0",
+    "estree-walker": "^3.0.3",
     "glob": "^8.1.0",
     "mocha": "^10.2.0",
     "ts-node": "^10.9.1",
-    "typescript": "^5.1.3"
-  }
+    "typescript": "^5.1.3",
+    "unist-builder": "^3.0.1",
+    "unist-util-select": "^4.0.3"
+  },
+  "type": "module"
 }
