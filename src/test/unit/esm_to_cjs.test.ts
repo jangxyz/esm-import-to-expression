@@ -9,6 +9,10 @@ function prettifySource(source: string): string {
   return deafultPrettifySource(source, { sourceType: "module" });
 }
 
+function assertSameCode(code1: string, code2: string, msg?: string | Error) {
+  return assert.equal(prettifySource(code1), prettifySource(code2), msg);
+}
+
 describe("basic test suite", () => {
   it("1 + 1 = 2", () => {
     assert.strictEqual(1 + 1, 2);
@@ -42,12 +46,13 @@ describe("import statements", () => {
       );
     });
 
-    it.only("ImportDefaultSpecifier", () => {
+    it("ImportDefaultSpecifier", () => {
       const sourceCode = `import foo from "mod";`;
-      assert.strictEqual(
-        prettifySource(esmToCjs(sourceCode)),
-        prettifySource(`const foo = require("mod")`)
-      );
+      //assert.equal(
+      //  prettifySource(esmToCjs(sourceCode)),
+      //  prettifySource(`const foo = require("mod")`)
+      //);
+      assertSameCode(esmToCjs(sourceCode), `const foo = require("mod")`);
     });
 
     it("ImportNamespaceSpecifier", () => {
