@@ -1,86 +1,119 @@
-import { window, commands, Range, TextDocument } from "vscode";
+//import { window, Range, TextDocument } from "vscode";
 
-function getAllIndexes(
-  arr: string[],
-  func: (item: string) => unknown
-): number[] {
-  let indexes: number[] = [];
-  arr.forEach((line, i) => {
-    if (func(line)) indexes.push(i);
-  });
-  return indexes;
-}
+function splitString(source: string): string[] {
+  const sourceLines = source
+    .trim()
+    .split("\n")
+    .map((line) => line.trim());
 
-function splitString(str: string) {
-  const trimString = str.trim();
-  const lineArr = trimString.split("\n").map((line) => line.trim());
-  const importIndex = getAllIndexes(lineArr, (line) => line === "import {");
-  const fromIndex = getAllIndexes(
-    lineArr,
+  // lines matching "import {" (exact)
+  const importIndexes = getAllIndexes(
+    sourceLines,
+    (line) => line === "import {"
+  );
+  // lines matching "...} from..." but not "...import {..." and "..., {..."
+  const fromIndexes = getAllIndexes(
+    sourceLines,
     (line) =>
       line.match(/} from/) && !line.match(/import {/) && !line.match(/, {/)
   );
 
-  if (importIndex.length > 0 && fromIndex.length > 0) {
-    const indexList = importIndex
-      .map((importInd, i) => [importInd, fromIndex[i]])
-      .map((arr) => {
+  // has matching indexes
+  if (importIndexes.length > 0 && fromIndexes.length > 0) {
+    // collect lines between range importIndex and fromIndex range.
+    const targetLines = importIndexes
+      .map((index, i) => sourceLines.slice(index, fromIndexes[i] + 1))
+      .map((arr) => arr.join(""));
+
+    // collect all indexes between importIndex and fromIndex range.
+    const targetIndexes = importIndexes
+      .map((importInd, i) => [importInd, fromIndexes[i]] as [number, number])
+      .map((arr: [number, number]) => {
+        const [startIndex, endIndex] = arr;
+
+        //const indexes = [];
+        //let i = +arr[0];
+        //while (i <= +arr[1]) {
+        //  indexes.push(i);
+        //  i++;
+        //}
+
         const indexes = [];
-        let i = +arr[0];
-        while (i <= +arr[1]) {
+        for (let i = startIndex; i <= endIndex; i += 1) {
           indexes.push(i);
-          i++;
         }
         return indexes;
       })
       .reduce((prev, curr) => prev.concat(curr));
-    const arrays = importIndex
-      .map((index, i) => lineArr.slice(index, fromIndex[i] + 1))
-      .map((arr) => arr.join(""));
-    lineArr.forEach((line, i) => {
-      if (!indexList.includes(i)) arrays.push(line);
+
+    // append rest
+    sourceLines.forEach((line, i) => {
+      if (!targetIndexes.includes(i)) {
+        targetLines.push(line);
+      }
     });
-    return arrays;
-  } else {
-    return lineArr.filter((line) => line.length !== 0);
+
+    return targetLines;
+  }
+
+  return sourceLines.filter((line) => line.length !== 0);
+
+  //
+
+  /**
+   * @returns Array of indexes that matches the given filter.
+   */
+  function getAllIndexes(
+    lines: string[],
+    filter: (item: string) => unknown
+  ): number[] {
+    //let indexes: number[] = [];
+    //lines.forEach((line, i) => {
+    //  if (filter(line)) indexes.push(i);
+    //});
+    //return indexes;
+
+    return lines.reduce((indexes, line, index) => {
+      if (filter(line)) indexes.push(index);
+      return indexes;
+    }, [] as number[]);
   }
 }
 
-function extractPath(str: string) {
-  const matchedText = str.match(/(\"|\')(.+?)(\"|\')/i);
-  return matchedText && matchedText[0].trim();
-}
+/** Create a 'require' string */
+function createRequireString(line: string): string {
+  line = line.trim();
 
-function extractName(str: string): string | null {
-  const matchedText = str.match(/import(.*?)from/);
-  return matchedText && matchedText[1].trim();
-}
+  // extract PATH and NAME part (eg. 'import esmToCjs from "esm_to_cjs.js"')
+  const path = extractPathPart(line);
+  const name = extractNamePart(line);
 
-function createRequireString(str: string): string {
-  const path = extractPath(str);
-  const name = extractName(str);
-
+  // no name part (eg. 'import "esm_to_cjs.js"')
   if (!name && path) return `require(${path});`;
 
+  // import without any relative paths
+  // eg.      'import { foo } from "bar"'
+  // but not: 'import { foo } from "./bar"'
   if (
-    name &&
-    name.match(/\{/i) &&
-    name.match(/\}/i) &&
+    name?.match(/\{/i) &&
+    name?.match(/\}/i) &&
+    //
     path &&
-    !path.match(/\.\//i)
+    !path.match(/[.]\//i)
   ) {
-    const nameString = str.match(/{(.+?)}/i)?.[1].trim();
+    const nameString = line.match(/{(.+?)}/i)?.[1].trim();
     const extraName =
-      str
+      line
         .match(/import(.+?){/i)?.[1]
         .trim()
         .replace(",", "") ||
-      str
+      line
         .match(/}(.+?)from/i)?.[1]
         .trim()
         .replace(",", "") ||
       null;
 
+    //
     if (nameString?.includes(",")) {
       const names = nameString.split(",").map((name) => name.trim());
       let returnedString = extraName
@@ -105,7 +138,9 @@ function createRequireString(str: string): string {
         }
       });
       return returnedString;
-    } else {
+    }
+    //
+    else {
       if (nameString?.includes(" as ")) {
         const [originalName, newName] = nameString
           .split(" as ")
@@ -121,8 +156,9 @@ function createRequireString(str: string): string {
     }
   }
 
+  //
   if (name?.match(/\{/i) && name?.match(/\}/i) && path?.match(/\.\//i)) {
-    const nameSring = str.match(/{(.+?)}/i)?.[1].trim();
+    const nameSring = line.match(/{(.+?)}/i)?.[1].trim();
 
     if (nameSring && nameSring.includes(",")) {
       const names = nameSring
@@ -138,11 +174,14 @@ function createRequireString(str: string): string {
         }
       });
       return returnedString;
-    } else {
+    }
+    //
+    else {
       return `const ${nameSring} = require(${path}).${nameSring};`;
     }
   }
 
+  //
   if (
     name &&
     !name.match(/\{/i) &&
@@ -158,158 +197,196 @@ function createRequireString(str: string): string {
     }
   }
 
+  // default
+
   return `const ${name} = require(${path});`;
+
+  //
+
+  /**
+   * Extract path part from import statement.
+   * @example 'import esmToCjs from "esm_to_cjs.js"'
+   */
+  function extractPathPart(line: string): string | undefined {
+    const matchedText = line.match(/(\"|\')(.+?)(\"|\')/i);
+    return matchedText?.[0].trim();
+  }
+
+  /**
+   * Extract name part from import statement.
+   * @example 'import esmToCjs from "esm_to_cjs.js"'
+   */
+  function extractNamePart(line: string): string | undefined {
+    const matchedText = line.match(/import(.*?)from/);
+    return matchedText?.[1].trim();
+  }
 }
 
-export function parseString(str: string) {
-  const arrayedString = splitString(str);
-  if (arrayedString.length === 1) {
-    return createRequireString(arrayedString[0].trim());
-  } else {
-    const convertedStrings = arrayedString
-      .filter((line) => line.length !== 0)
-      .map((line) => createRequireString(line.trim()));
-    let returnedString = "";
-    convertedStrings.forEach((line, i) => {
-      if (i === arrayedString.length - 1) {
-        returnedString = `${returnedString}${line}`;
-      } else {
-        returnedString = `${returnedString}${line}\n`;
-      }
+/** */
+export function convertImportStatements(soureCode: string): string {
+  const lines = splitString(soureCode);
+  if (lines.length === 1) {
+    return createRequireString(lines[0]);
+  }
+
+  const convertedStrings = lines
+    .filter((line) => line.length !== 0)
+    .map((line) => {
+      return createRequireString(line);
     });
-    return returnedString;
-  }
-}
 
-// --- vscode ---
+  //let returnedString = "";
+  //convertedStrings.forEach((line, i) => {
+  //  if (i === lines.length - 1) {
+  //    returnedString = `${returnedString}${line}`;
+  //  } else {
+  //    returnedString = `${returnedString}${line}\n`;
+  //  }
+  //});
+  //return returnedString;
 
-export function insertText(val: string) {
-  const editor = window.activeTextEditor;
-  if (!editor) {
-    window.showErrorMessage("Can't insert log because no document is open");
-    return;
-  }
-
-  const selection = editor.selection;
-
-  const range = new Range(selection.start, selection.end);
-  const returnedString = parseString(val);
-
-  editor.edit((editBuilder) => {
-    editBuilder.replace(range, returnedString);
-  });
-}
-
-function getAllExports(document: TextDocument, documentText: string) {
-  let exportStrings = [];
-
-  const exportRegex = /^export const /gm;
-  let match;
-  while ((match = exportRegex.exec(documentText))) {
-    let matchRange = new Range(
-      document.positionAt(match.index),
-      document.positionAt(match.index + match[0].length)
-    );
-    if (!matchRange.isEmpty) exportStrings.push(matchRange);
-  }
-  return exportStrings;
-}
-
-function getAllExportDefaults(document: TextDocument, documentText: string) {
-  let exportDefaultStrings = [];
-
-  const exportDefaultRegex = /^export default |^export /gm;
-  let match;
-  while ((match = exportDefaultRegex.exec(documentText))) {
-    let matchRange = new Range(
-      document.positionAt(match.index),
-      document.positionAt(match.index + match[0].length)
-    );
-    if (!matchRange.isEmpty) exportDefaultStrings.push(matchRange);
-  }
-  return exportDefaultStrings;
-}
-
-function replaceAllFoundExports(
-  exportStrings: Range[],
-  exportDefaultStrings: Range[]
-) {
-  const editor = window.activeTextEditor;
-  if (!editor) return;
-
-  if (exportStrings.length > 0) {
-    const exportStringList = Array.of(exportStrings)[0];
-    let counter = 0;
-
-    const convertString = (exportStringList: Range[], counter: number) => {
-      const exportReplacement = "exports.";
-      editor
-        .edit((editBuilder) => {
-          const convertedExportString = Object.entries(
-            exportStringList[counter]
-          );
-          const start = convertedExportString[0][1];
-          const end = convertedExportString[1][1];
-          const range = new Range(start, end);
-          editBuilder.replace(range, exportReplacement);
-        })
-        .then(() => {
-          counter++;
-          if (counter < exportStringList.length) {
-            convertString(exportStringList, counter);
-          }
-        });
-    };
-
-    if (counter < exportStringList.length) {
-      convertString(exportStringList, counter);
+  return convertedStrings.reduce((stringSoFar, line, i) => {
+    //if (i === lines.length - 1) {
+    //  return stringSoFar + line;
+    //} else {
+    //  return stringSoFar + `${line}\n`;
+    //}
+    stringSoFar += line;
+    if (i !== lines.length - 1) {
+      stringSoFar += "\n";
     }
-  }
-
-  if (exportDefaultStrings.length > 0) {
-    const exportDefaultStringList = Array.of(exportDefaultStrings)[0];
-    let counterDefault = 0;
-    const exportDefaultReplacement = "module.exports = ";
-
-    const convertString = (
-      exportDefaultStringList: Range[],
-      counterDefault: number
-    ) => {
-      editor
-        .edit((editBuilder) => {
-          const convertedExportString = Object.entries(
-            exportDefaultStringList[counterDefault]
-          );
-          const start = convertedExportString[0][1];
-          const end = convertedExportString[1][1];
-          const range = new Range(start, end);
-          editBuilder.replace(range, exportDefaultReplacement);
-        })
-        .then(() => {
-          counterDefault++;
-          if (counterDefault < exportDefaultStringList.length) {
-            convertString(exportDefaultStringList, counterDefault);
-          }
-        });
-    };
-
-    if (counterDefault < exportDefaultStringList.length) {
-      convertString(exportDefaultStringList, counterDefault);
-    }
-  }
+    return stringSoFar;
+  }, "");
 }
 
-const replaceAllExports = () => {
-  const editor = window.activeTextEditor;
-  if (!editor) {
-    return;
-  }
+//// --- vscode ---
 
-  const document = editor.document;
-  const documentText = editor.document.getText();
+//export function insertText(val: string) {
+//  const editor = window.activeTextEditor;
+//  if (!editor) {
+//    window.showErrorMessage("Can't insert log because no document is open");
+//    return;
+//  }
+//
+//  const returnedString = convertImportStatements(val);
+//
+//  const selection = editor.selection;
+//  const range = new Range(selection.start, selection.end);
+//
+//  editor.edit((editBuilder) => {
+//    editBuilder.replace(range, returnedString);
+//  });
+//}
 
-  const exportStrings = getAllExports(document, documentText);
-  const exportDefaultStrings = getAllExportDefaults(document, documentText);
+//function replaceAllFoundExports(
+//  exportStrings: Range[],
+//  exportDefaultStrings: Range[]
+//) {
+//  const editor = window.activeTextEditor;
+//  if (!editor) return;
+//
+//  if (exportStrings.length > 0) {
+//    const exportStringList = Array.of(exportStrings)[0];
+//    let counter = 0;
+//
+//    const convertString = (exportStringList: Range[], counter: number) => {
+//      const exportReplacement = "exports.";
+//      editor
+//        .edit((editBuilder) => {
+//          const convertedExportString = Object.entries(
+//            exportStringList[counter]
+//          );
+//          const start = convertedExportString[0][1];
+//          const end = convertedExportString[1][1];
+//          const range = new Range(start, end);
+//          editBuilder.replace(range, exportReplacement);
+//        })
+//        .then(() => {
+//          counter++;
+//          if (counter < exportStringList.length) {
+//            convertString(exportStringList, counter);
+//          }
+//        });
+//    };
+//
+//    if (counter < exportStringList.length) {
+//      convertString(exportStringList, counter);
+//    }
+//  }
+//
+//  if (exportDefaultStrings.length > 0) {
+//    const exportDefaultStringList = Array.of(exportDefaultStrings)[0];
+//    let counterDefault = 0;
+//    const exportDefaultReplacement = "module.exports = ";
+//
+//    const convertString = (
+//      exportDefaultStringList: Range[],
+//      counterDefault: number
+//    ) => {
+//      editor
+//        .edit((editBuilder) => {
+//          const convertedExportString = Object.entries(
+//            exportDefaultStringList[counterDefault]
+//          );
+//          const start = convertedExportString[0][1];
+//          const end = convertedExportString[1][1];
+//          const range = new Range(start, end);
+//          editBuilder.replace(range, exportDefaultReplacement);
+//        })
+//        .then(() => {
+//          counterDefault++;
+//          if (counterDefault < exportDefaultStringList.length) {
+//            convertString(exportDefaultStringList, counterDefault);
+//          }
+//        });
+//    };
+//
+//    if (counterDefault < exportDefaultStringList.length) {
+//      convertString(exportDefaultStringList, counterDefault);
+//    }
+//  }
+//}
 
-  replaceAllFoundExports(exportStrings, exportDefaultStrings);
-};
+//export function replaceAllExports() {
+//  const editor = window.activeTextEditor;
+//  if (!editor) return;
+//
+//  const document = editor.document;
+//  const documentText = editor.document.getText();
+//
+//  const exportStrings = getAllExports(document, documentText);
+//  const exportDefaultStrings = getAllExportDefaults(document, documentText);
+//  replaceAllFoundExports(exportStrings, exportDefaultStrings);
+//
+//  //
+//
+//  function getAllExports(document: TextDocument, documentText: string) {
+//    let exportStrings = [];
+
+//    const exportRegex = /^export const /gm;
+//    let match;
+//    while ((match = exportRegex.exec(documentText))) {
+//      let matchRange = new Range(
+//        document.positionAt(match.index),
+//        document.positionAt(match.index + match[0].length)
+//      );
+//      if (!matchRange.isEmpty) exportStrings.push(matchRange);
+//    }
+//    return exportStrings;
+//  }
+//
+//  function getAllExportDefaults(document: TextDocument, documentText: string) {
+//    let exportDefaultStrings = [];
+
+//    const exportDefaultRegex = /^export default |^export /gm;
+//    let match;
+//    while ((match = exportDefaultRegex.exec(documentText))) {
+//      let matchRange = new Range(
+//        document.positionAt(match.index),
+//        document.positionAt(match.index + match[0].length)
+//      );
+//      if (!matchRange.isEmpty) exportDefaultStrings.push(matchRange);
+//    }
+//    return exportDefaultStrings;
+//  }
+//}
