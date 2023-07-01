@@ -1,5 +1,7 @@
 import * as assert from "assert";
-import esmToCjs from "../../esm_to_cjs";
+
+//import esmToCjs from "../../esm_to_cjs";
+import esmToCjs from "../../esm_to_cjs.chatgpt";
 
 import { stripIndent } from "common-tags";
 
@@ -21,7 +23,7 @@ describe("esmToCsv", () => {
 
 describe("import statements", () => {
   describe("ImportDeclaration", () => {
-    it.only("ImportSpecifier", () => {
+    it("ImportSpecifier", () => {
       //
       const sourceCode1 = `import {foo} from "mod";`;
       assert.strictEqual(
@@ -48,7 +50,7 @@ describe("import statements", () => {
   });
 });
 
-describe.skip("export statements", () => {
+describe("export statements", () => {
   it("ExportNamedDeclaration", () => {
     const pairs = [
       [`export {foo};`, `module.exports = { foo };`],
@@ -93,12 +95,8 @@ describe.skip("export statements", () => {
 
   it("ExportAllDeclaration", () => {
     const pairs = [
-      [
-        `export * from "mod";`,
-        stripIndent`
-            module.exports = require("mod");
-          `,
-      ],
+      [`export * from "mod";`, `module.exports = require("mod");`],
+      [`export * as foo from "mod";`, `module.exports.foo = require("mod");`],
     ];
   });
 });
