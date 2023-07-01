@@ -1,4 +1,4 @@
-//import { window, Range, TextDocument } from "vscode";
+import { window, Range, TextDocument } from "vscode";
 
 function splitString(source: string): string[] {
   const sourceLines = source
@@ -278,115 +278,115 @@ export function convertImportStatements(soureCode: string): string {
 //  });
 //}
 
-//function replaceAllFoundExports(
-//  exportStrings: Range[],
-//  exportDefaultStrings: Range[]
-//) {
-//  const editor = window.activeTextEditor;
-//  if (!editor) return;
-//
-//  if (exportStrings.length > 0) {
-//    const exportStringList = Array.of(exportStrings)[0];
-//    let counter = 0;
-//
-//    const convertString = (exportStringList: Range[], counter: number) => {
-//      const exportReplacement = "exports.";
-//      editor
-//        .edit((editBuilder) => {
-//          const convertedExportString = Object.entries(
-//            exportStringList[counter]
-//          );
-//          const start = convertedExportString[0][1];
-//          const end = convertedExportString[1][1];
-//          const range = new Range(start, end);
-//          editBuilder.replace(range, exportReplacement);
-//        })
-//        .then(() => {
-//          counter++;
-//          if (counter < exportStringList.length) {
-//            convertString(exportStringList, counter);
-//          }
-//        });
-//    };
-//
-//    if (counter < exportStringList.length) {
-//      convertString(exportStringList, counter);
-//    }
-//  }
-//
-//  if (exportDefaultStrings.length > 0) {
-//    const exportDefaultStringList = Array.of(exportDefaultStrings)[0];
-//    let counterDefault = 0;
-//    const exportDefaultReplacement = "module.exports = ";
-//
-//    const convertString = (
-//      exportDefaultStringList: Range[],
-//      counterDefault: number
-//    ) => {
-//      editor
-//        .edit((editBuilder) => {
-//          const convertedExportString = Object.entries(
-//            exportDefaultStringList[counterDefault]
-//          );
-//          const start = convertedExportString[0][1];
-//          const end = convertedExportString[1][1];
-//          const range = new Range(start, end);
-//          editBuilder.replace(range, exportDefaultReplacement);
-//        })
-//        .then(() => {
-//          counterDefault++;
-//          if (counterDefault < exportDefaultStringList.length) {
-//            convertString(exportDefaultStringList, counterDefault);
-//          }
-//        });
-//    };
-//
-//    if (counterDefault < exportDefaultStringList.length) {
-//      convertString(exportDefaultStringList, counterDefault);
-//    }
-//  }
-//}
+function replaceAllFoundExports(
+  exportStrings: Range[],
+  exportDefaultStrings: Range[]
+) {
+  const editor = window.activeTextEditor;
+  if (!editor) return;
 
-//export function replaceAllExports() {
-//  const editor = window.activeTextEditor;
-//  if (!editor) return;
-//
-//  const document = editor.document;
-//  const documentText = editor.document.getText();
-//
-//  const exportStrings = getAllExports(document, documentText);
-//  const exportDefaultStrings = getAllExportDefaults(document, documentText);
-//  replaceAllFoundExports(exportStrings, exportDefaultStrings);
-//
-//  //
-//
-//  function getAllExports(document: TextDocument, documentText: string) {
-//    let exportStrings = [];
+  if (exportStrings.length > 0) {
+    const exportStringList = Array.of(exportStrings)[0];
+    let counter = 0;
 
-//    const exportRegex = /^export const /gm;
-//    let match;
-//    while ((match = exportRegex.exec(documentText))) {
-//      let matchRange = new Range(
-//        document.positionAt(match.index),
-//        document.positionAt(match.index + match[0].length)
-//      );
-//      if (!matchRange.isEmpty) exportStrings.push(matchRange);
-//    }
-//    return exportStrings;
-//  }
-//
-//  function getAllExportDefaults(document: TextDocument, documentText: string) {
-//    let exportDefaultStrings = [];
+    const convertStringA = (exportStringList: Range[], counter: number) => {
+      const exportReplacement = "exports.";
 
-//    const exportDefaultRegex = /^export default |^export /gm;
-//    let match;
-//    while ((match = exportDefaultRegex.exec(documentText))) {
-//      let matchRange = new Range(
-//        document.positionAt(match.index),
-//        document.positionAt(match.index + match[0].length)
-//      );
-//      if (!matchRange.isEmpty) exportDefaultStrings.push(matchRange);
-//    }
-//    return exportDefaultStrings;
-//  }
-//}
+      editor
+        .edit((editBuilder) => {
+          const _range = exportStringList[counter];
+          const convertedExportString = Object.entries(_range);
+          const start = convertedExportString[0][1];
+          const end = convertedExportString[1][1];
+          const range = new Range(start, end);
+          editBuilder.replace(range, exportReplacement);
+        })
+        .then(() => {
+          counter++;
+          if (counter < exportStringList.length) {
+            convertStringA(exportStringList, counter);
+          }
+        });
+    };
+
+    if (counter < exportStringList.length) {
+      convertStringA(exportStringList, counter);
+    }
+  }
+
+  if (exportDefaultStrings.length > 0) {
+    const exportDefaultStringList = Array.of(exportDefaultStrings)[0];
+    let counterDefault = 0;
+    const exportDefaultReplacement = "module.exports = ";
+
+    const convertStringB = (
+      exportDefaultStringList: Range[],
+      counterDefault: number
+    ) => {
+      editor
+        .edit((editBuilder) => {
+          const convertedExportString = Object.entries(
+            exportDefaultStringList[counterDefault]
+          );
+          const start = convertedExportString[0][1];
+          const end = convertedExportString[1][1];
+          const range = new Range(start, end);
+          editBuilder.replace(range, exportDefaultReplacement);
+        })
+        .then(() => {
+          counterDefault++;
+          if (counterDefault < exportDefaultStringList.length) {
+            convertStringB(exportDefaultStringList, counterDefault);
+          }
+        });
+    };
+
+    if (counterDefault < exportDefaultStringList.length) {
+      convertStringB(exportDefaultStringList, counterDefault);
+    }
+  }
+}
+
+export function replaceAllExports() {
+  const editor = window.activeTextEditor;
+  if (!editor) return;
+
+  const document = editor.document;
+  const documentText = editor.document.getText();
+
+  const exportStrings = getAllExports(document, documentText);
+  const exportDefaultStrings = getAllExportDefaults(document, documentText);
+  replaceAllFoundExports(exportStrings, exportDefaultStrings);
+
+  //
+
+  function getAllExports(document: TextDocument, documentText: string) {
+    let exportStrings = [];
+
+    const exportRegex = /^export const /gm;
+    let match;
+    while ((match = exportRegex.exec(documentText))) {
+      let matchRange = new Range(
+        document.positionAt(match.index),
+        document.positionAt(match.index + match[0].length)
+      );
+      if (!matchRange.isEmpty) exportStrings.push(matchRange);
+    }
+    return exportStrings;
+  }
+
+  function getAllExportDefaults(document: TextDocument, documentText: string) {
+    let exportDefaultStrings = [];
+
+    const exportDefaultRegex = /^export default |^export /gm;
+    let match;
+    while ((match = exportDefaultRegex.exec(documentText))) {
+      let matchRange = new Range(
+        document.positionAt(match.index),
+        document.positionAt(match.index + match[0].length)
+      );
+      if (!matchRange.isEmpty) exportDefaultStrings.push(matchRange);
+    }
+    return exportDefaultStrings;
+  }
+}
