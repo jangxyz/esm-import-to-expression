@@ -1,57 +1,18 @@
-import * as assert from "assert";
+import * as assert from "node:assert";
 
+import {
+  code,
+  stringify,
+  assertSameCode,
+  assertSameCodeOneOf,
+} from "./helpers.js";
 import esmToCjs from "../../esm_to_cjs.js";
 //import esmToCjs from "../../esm_to_cjs.chatgpt";
 //import { convertImportStatements as esmToCjs } from "../../esm_to_cjs.tlesvesque";
 
-import { stripIndent as code } from "common-tags";
-import {
-  prettifySource as defaultPrettifySource,
-  //parseSourceBody,
-} from "../../est_helper.js";
-
-// helpers
-
-const stringify = (...args: Parameters<typeof JSON.stringify>) =>
-  JSON.stringify(...args);
-
-function prettifySource(source: string): string {
-  try {
-    return defaultPrettifySource(source, { sourceType: "module" });
-  } catch (err) {
-    console.warn("failed parsing string", typeof source, stringify(source));
-    return source;
-  }
-}
-
-function assertSameCode(
-  code1: string,
-  expectedCode: string,
-  msg: string | Error = undefined
+export function assertCodeMatchingInPairs(
+  pairs: [string, string | string[]][]
 ) {
-  assert.equal(prettifySource(code1), prettifySource(expectedCode), msg);
-  return true;
-}
-
-function assertSameCodeOneOf(code1: string, expectedCodes: string[]) {
-  const hasAny = expectedCodes.some(
-    (expCode) => prettifySource(code1) === prettifySource(expCode)
-  );
-  if (hasAny) {
-    assert.ok(hasAny);
-  } else {
-    const msg = `${stringify(code1)} should match one of: [${expectedCodes.map(
-      (code) => stringify(code)
-    )}]`;
-    assert.deepEqual(
-      prettifySource(code1),
-      expectedCodes.map(prettifySource),
-      msg
-    );
-  }
-}
-
-function assertCodeMatchingInPairs(pairs: [string, string | string[]][]) {
   pairs.forEach(([sourceCode, expectedCode]) => {
     const actualCode = esmToCjs(sourceCode);
     if (typeof expectedCode === "string") {

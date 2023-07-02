@@ -49,7 +49,7 @@ export function expressionStatement(expression) {
 }
 
 /**
- * 
+ *
  * @param   {(Property|SpreadElement)[]} properties
  * @returns {ObjectExpression}
  */
@@ -57,7 +57,7 @@ export function objectExpression(properties = []) {
   return {
     type: "ObjectExpression",
     properties,
-  }
+  };
 }
 
 /**
@@ -93,6 +93,56 @@ export function assignmentExpression(left, operator, right) {
     left,
     operator,
     right: normIdent(right),
+  };
+}
+
+/**
+ * Build CallExpression object.
+ *
+ * @example
+   {
+     "type": "CallExpression",
+     "callee": { "type": "Identifier", "name": "require" },
+     "arguments": [
+       { "type": "Literal", "value": "mod", "raw": "\"mod\"" }
+     ],
+     "optional": false
+   }
+ * 
+ * @param {Expression|Super|string} callee
+ * @param {(Expression|SpreadElement)[]} args
+ * @param {{optional: boolean}?} options
+ * @returns {import("estree").CallExpression}
+ */
+export function callExpression(callee, args, options = {}) {
+  const { optional } = { optional: false, ...options };
+  return {
+    type: "CallExpression",
+    callee: normIdent(callee),
+    arguments: args,
+    optional,
+  };
+}
+
+/**
+ * @param {Expression|string} source
+ * @returns {import("estree").ImportExpression}
+ */
+export function importExpression(source) {
+  return {
+    type: "ImportExpression",
+    source: normIdent(source),
+  };
+}
+
+/**
+ * @param {Expression|string} argument
+ * @returns {import("estree").AwaitExpression}
+ */
+export function awaitExpression(argument) {
+  return {
+    type: "AwaitExpression",
+    argument: normIdent(argument),
   };
 }
 
@@ -185,33 +235,3 @@ export function variableDeclaration(kind, declarations) {
     declarations,
   };
 }
-
-/**
- * Build CallExpression object.
- *
- * @example
-   {
-     "type": "CallExpression",
-     "callee": { "type": "Identifier", "name": "require" },
-     "arguments": [
-       { "type": "Literal", "value": "mod", "raw": "\"mod\"" }
-     ],
-     "optional": false
-   }
- * 
- * @param {Expression|Super|string} callee
- * @param {(Expression|SpreadElement)[]} args
- * @param {{optional: boolean}?} options
- * @returns {import("estree").CallExpression}
- */
-export function callExpression(callee, args, options = {}) {
-  const { optional } = { optional: false, ...options };
-  return {
-    type: "CallExpression",
-    callee: normIdent(callee),
-    arguments: args,
-    optional,
-  };
-}
-
-export function literal()
