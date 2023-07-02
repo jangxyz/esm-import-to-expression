@@ -5,7 +5,11 @@ import esmToCjs from "../../esm_to_cjs.js";
 //import { convertImportStatements as esmToCjs } from "../../esm_to_cjs.tlesvesque";
 
 import { stripIndent } from "common-tags";
-import { prettifySource as defaultPrettifySource } from "../../est_helper.js";
+import {
+  prettifySource as defaultPrettifySource,
+  parseSource,
+  parseSourceBody,
+} from "../../est_helper.js";
 
 function prettifySource(source: string): string {
   return defaultPrettifySource(source, { sourceType: "module" });
@@ -18,12 +22,16 @@ function assertSameCode(
 ) {
   return assert.equal(prettifySource(code1), prettifySource(expectedCode), msg);
 }
+
 function assertSameCodeOneOf(code1: string, expectedCodes: string[]) {
-  assert(
-    expectedCodes.some(
-      (expCode) => prettifySource(code1) === prettifySource(expCode)
-    )
+  const hasAny = expectedCodes.some(
+    (expCode) => prettifySource(code1) === prettifySource(expCode)
   );
+  if (hasAny) {
+    assert.ok(hasAny);
+  } else {
+    assert.deepEqual(prettifySource(code1), expectedCodes.map(prettifySource));
+  }
 }
 
 describe("basic test suite", () => {
@@ -43,7 +51,7 @@ describe("esmToCsv", () => {
 });
 
 describe.only("import statements", () => {
-  describe("ImportDeclaration", () => {
+  describe.only("ImportDeclaration", () => {
     it("ImportSpecifier", () => {
       //
       const sourceCode1 = `import {foo} from "mod";`;
@@ -68,16 +76,38 @@ describe.only("import statements", () => {
           const foo2 = require("mod").bar
         `,
       ]);
+
+      //
+      const sourceCode4 = `import {foo, bar as bar2} from "mod";`;
+      assertSameCodeOneOf(esmToCjs(sourceCode4), [
+        `const { foo, bar: bar2 } = require("mod")`,
+        stripIndent`
+          const bar  = require("mod").foo\n
+          const foo2 = require("mod").bar
+        `,
+      ]);
     });
 
-    it.only("ImportDefaultSpecifier", () => {
-      const sourceCode = `import foo from "mod";`;
-      assertSameCode(esmToCjs(sourceCode), `const foo = require("mod")`);
+    it("ImportDefaultSpecifier", () => {
+      const sourceCode1 = `import foo from 'mod';`;
+      assertSameCode(
+        esmToCjs(sourceCode1),
+        `const {default: foo} = require('mod')`
+      );
     });
 
     it("ImportNamespaceSpecifier", () => {
-      const sourceCode = `import * as foo from "mod";`;
-      assert.strictEqual(esmToCjs(sourceCode), `const foo = require("mod")`);
+      const sourceCode = `import * as foo from 'mod';`;
+      assertSameCode(esmToCjs(sourceCode), `const foo = require('mod')`);
+    });
+
+    it("mixed", () => {
+      const sourceCode = `import foo, { bar } from 'mod';`;
+      //console.dir(parseSourceBody(sourceCode, { sourceType: "module", position: false }), { depth: null, });
+      assertSameCode(
+        esmToCjs(sourceCode),
+        `const { default: foo, bar } = require("mod")`
+      );
     });
   });
 });

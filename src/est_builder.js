@@ -103,7 +103,7 @@ export function objectPattern(properties) {
  * @param {Property['key'] | string} key
  * @param {Property['value'] | string} value
  * @param {Property['kind']} [kind='init']
- * @param {{ method?: boolean; shorthand?: boolean; computed?: boolean }} [options={}]
+ * @param {Partial<{ method: boolean; shorthand: boolean; computed: boolean }>} [options={}]
  * @returns {Property}
  */
 export function property(key, value, kind = "init", options = {}) {
@@ -126,7 +126,16 @@ export function property(key, value, kind = "init", options = {}) {
 }
 
 /**
- *
+ * @example
+ * {
+     "kind"     : "init"
+     "type"     : "Property",
+     "key"      : { "type": "Identifier", "name": "foo" },
+     "value"    : { "type": "Identifier", "name": "bar" },
+     "method"   : false,
+     "shorthand": false,
+     "computed" : false
+   }
  * @param {AssignmentProperty['key'] | string} key
  * @param {AssignmentProperty['value'] | string} value
  * @param {{ method?: boolean; shorthand?: boolean; computed?: boolean }} [options={}]
@@ -166,6 +175,17 @@ export function variableDeclaration(kind, declarations) {
 
 /**
  * Build CallExpression object.
+ *
+ * @example
+   {
+     "type": "CallExpression",
+     "callee": { "type": "Identifier", "name": "require" },
+     "arguments": [
+       { "type": "Literal", "value": "mod", "raw": "\"mod\"" }
+     ],
+     "optional": false
+   }
+ * 
  * @param {Expression|Super|string} callee
  * @param {(Expression|SpreadElement)[]} args
  * @param {{optional: boolean}?} options
