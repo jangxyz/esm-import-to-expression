@@ -4,15 +4,24 @@ import esmToCjs from "../../esm_to_cjs.js";
 //import esmToCjs from "../../esm_to_cjs.chatgpt";
 //import { convertImportStatements as esmToCjs } from "../../esm_to_cjs.tlesvesque";
 
-import { stripIndent } from "common-tags";
+import { stripIndent as code } from "common-tags";
 import {
   prettifySource as defaultPrettifySource,
-  parseSource,
-  parseSourceBody,
+  //parseSourceBody,
 } from "../../est_helper.js";
 
+// helpers
+
+const stringify = (...args: Parameters<typeof JSON.stringify>) =>
+  JSON.stringify(...args);
+
 function prettifySource(source: string): string {
-  return defaultPrettifySource(source, { sourceType: "module" });
+  try {
+    return defaultPrettifySource(source, { sourceType: "module" });
+  } catch (err) {
+    console.warn("failed parsing string", typeof source, stringify(source));
+    return source;
+  }
 }
 
 function assertSameCode(
@@ -20,7 +29,8 @@ function assertSameCode(
   expectedCode: string,
   msg: string | Error = undefined
 ) {
-  return assert.equal(prettifySource(code1), prettifySource(expectedCode), msg);
+  assert.equal(prettifySource(code1), prettifySource(expectedCode), msg);
+  return true;
 }
 
 function assertSameCodeOneOf(code1: string, expectedCodes: string[]) {
@@ -30,8 +40,29 @@ function assertSameCodeOneOf(code1: string, expectedCodes: string[]) {
   if (hasAny) {
     assert.ok(hasAny);
   } else {
-    assert.deepEqual(prettifySource(code1), expectedCodes.map(prettifySource));
+    const msg = `${stringify(code1)} should match one of: [${expectedCodes.map(
+      (code) => stringify(code)
+    )}]`;
+    assert.deepEqual(
+      prettifySource(code1),
+      expectedCodes.map(prettifySource),
+      msg
+    );
   }
+}
+
+function assertCodeMatchingInPairs(pairs: [string, string | string[]][]) {
+  pairs.forEach(([sourceCode, expectedCode]) => {
+    const actualCode = esmToCjs(sourceCode);
+    if (typeof expectedCode === "string") {
+      const msg = `${stringify(sourceCode)} does not convert to ${stringify(
+        expectedCode
+      )}`;
+      assertSameCode(actualCode, expectedCode, msg);
+    } else {
+      assertSameCodeOneOf(actualCode, expectedCode);
+    }
+  });
 }
 
 describe("basic test suite", () => {
@@ -42,7 +73,7 @@ describe("basic test suite", () => {
 
 describe("esmToCsv", () => {
   it("interface", () => {
-    const sourceCode = stripIndent`
+    const sourceCode = code`
       const a = 1 + 1;
       console.log(a * 2);
     `;
@@ -50,8 +81,8 @@ describe("esmToCsv", () => {
   });
 });
 
-describe.only("import statements", () => {
-  describe.only("ImportDeclaration", () => {
+describe("import statements", () => {
+  describe("ImportDeclaration", () => {
     it("ImportSpecifier", () => {
       //
       const sourceCode1 = `import {foo} from "mod";`;
@@ -71,7 +102,7 @@ describe.only("import statements", () => {
       const sourceCode3 = `import {foo as foo1, bar as bar2} from "mod";`;
       assertSameCodeOneOf(esmToCjs(sourceCode3), [
         `const { foo: foo1, bar: bar2 } = require("mod")`,
-        stripIndent`
+        code`
           const bar1 = require("mod").foo\n
           const foo2 = require("mod").bar
         `,
@@ -81,7 +112,7 @@ describe.only("import statements", () => {
       const sourceCode4 = `import {foo, bar as bar2} from "mod";`;
       assertSameCodeOneOf(esmToCjs(sourceCode4), [
         `const { foo, bar: bar2 } = require("mod")`,
-        stripIndent`
+        code`
           const bar  = require("mod").foo\n
           const foo2 = require("mod").bar
         `,
@@ -112,7 +143,7 @@ describe.only("import statements", () => {
   });
 });
 
-describe("export statements", () => {
+describe.only("export statements", () => {
   it("ExportNamedDeclaration", () => {
     const pairs = [
       [`export {foo};`, `module.exports = { foo };`],
@@ -125,43 +156,172 @@ describe("export statements", () => {
   });
 
   it("ExportSpecifier", () => {
-    const pairs = [
+    const pairs: [string, string | string[]][] = [
       [
-        `export {foo};`,
-        stripIndent`
-            module.exports = {};
-            module.exports.foo = foo;
-          `,
+        code`
+          const foo = 1;
+          export { foo };
+        `,
+        code`
+          const foo = 1;
+          module.exports = {};
+          module.exports.foo = foo;
+        `,
+      ],
+
+      // export as declaration
+      [
+        code`
+          export const foo = 1;
+        `,
+        code`
+          const foo = 1;
+          module.exports = {};
+          module.exports.foo = foo;
+        `,
       ],
       [
-        `export {foo, bar};`,
-        stripIndent`
+        code`
+          export const foo = 1, bar = 2;
+        `,
+
+        [
+          code`
+            const foo = 1;
+            const bar = 2;
             module.exports = {};
             module.exports.foo = foo;
             module.exports.bar = bar;
           `,
-      ],
-      [
-        `export {bar as foo};`,
-        stripIndent`
+          code`
+            const foo = 1, bar = 2;
             module.exports = {};
-            module.exports.foo = bar;
+            module.exports.foo = foo;
+            module.exports.bar = bar;
           `,
+        ],
       ],
+
+      // export function
+      [
+        code`
+          function foo() { return 1 };
+          export { foo };
+        `,
+        code`
+          function foo() { return 1 };
+          module.exports = {};
+          module.exports.foo = foo;
+        `,
+      ],
+
+      // export function as declaration
+      [
+        code`
+          export function foo() { return 1 };
+        `,
+        code`
+          function foo() { return 1 };
+          module.exports = {};
+          module.exports.foo = foo;
+        `,
+      ],
+
+      //// multiple exports
+      //[
+      //  code`
+      //    const foo = 1;
+      //    const bar = 2;
+      //    export {foo, bar as bar2};
+      //    export let baz = 3;
+      //  `,
+      //  code`
+      //    const foo = 1;
+      //    const bar = 2;
+      //    module.exports = {};
+      //    module.exports.foo = foo;
+      //    module.exports.bar = bar;
+      //  `,
+      //],
+
+      //[ `export {bar as foo};`, code` module.exports = {}; module.exports.foo = bar; `, ],
     ];
+
+    assertCodeMatchingInPairs(pairs);
   });
 
-  it("ExportDefaultDeclaration", () => {
-    const pairs = [
-      [`export default function () {};`, ``],
-      [`export default 1;`, ``],
-    ];
+  describe.only("ExportDefaultDeclaration", () => {
+    it("anonymouse function", () => {
+      const pairs: [string, string | string[]][] = [
+        [
+          `export default function () { return 1 }`,
+          code`
+            module.exports = {};
+            module.exports.default = function () { return 1};
+          `,
+        ],
+      ];
+      assertCodeMatchingInPairs(pairs);
+    });
+
+    it("named function", () => {
+      const pairs: [string, string | string[]][] = [
+        // named function
+        [
+          `export default function fooFunc() { return 1 }`,
+          code`
+          module.exports = {};
+          module.exports.default = function fooFunc() { return 1 };
+        `,
+        ],
+        [
+          code`
+          function fooFunc() { 
+            return 1 
+          }
+          export default fooFunc;
+        `,
+          [
+            code`
+            module.exports = {};
+            module.exports.default = function fooFunc() { 
+              return 1 
+            };
+          `,
+            code`
+            function fooFunc() { 
+              return 1 
+            }
+            module.exports = {};
+            module.exports.default = fooFunc;
+          `,
+          ],
+        ],
+      ];
+      assertCodeMatchingInPairs(pairs);
+    });
+
+    it("constants", () => {
+      const pairs: [string, string | string[]][] = [
+        [
+          `export default 1;`,
+          code`
+            module.exports = {};
+            module.exports.default = 1;
+          `,
+        ],
+      ];
+      assertCodeMatchingInPairs(pairs);
+    });
   });
 
-  it("ExportAllDeclaration", () => {
+  it.skip("ExportAllDeclaration", () => {
     const pairs = [
       [`export * from "mod";`, `module.exports = require("mod");`],
       [`export * as foo from "mod";`, `module.exports.foo = require("mod");`],
     ];
+    pairs.forEach(([sourceCode, expectedCode]) => {
+      assertSameCode(esmToCjs(sourceCode), expectedCode);
+    });
   });
 });

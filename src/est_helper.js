@@ -28,19 +28,30 @@ export function parseSource(source, options = {}) {
   const { position } = { position: true, ...options };
   // remove 'start' and 'end' fields from every node
   if (position === false) {
-    walk(tree, {
-      enter(node) {
-        if ("start" in node) {
-          delete node["start"];
-        }
-        if ("end" in node) {
-          delete node["end"];
-        }
-      },
-    });
+    stripPosition(tree);
   }
 
   return /** @type {Program} */ (tree);
+}
+
+/**
+ *
+ * @param {ESTreeNode} tree
+ * @returns  {ESTreeNode}
+ */
+export function stripPosition(tree) {
+  walk(tree, {
+    enter(node) {
+      if ("start" in node) {
+        delete node["start"];
+      }
+      if ("end" in node) {
+        delete node["end"];
+      }
+    },
+  });
+
+  return tree;
 }
 
 /**

@@ -8,6 +8,7 @@
  * @typedef {import("estree").ExpressionStatement} ExpressionStatement
  * @typedef {import("estree").Expression} Expression
  * @typedef {import("estree").AssignmentExpression} AssignmentExpression
+ * @typedef {import("estree").ObjectExpression} ObjectExpression
  * @typedef {import("estree").MemberExpression} MemberExpression
  * @typedef {import("estree").VariableDeclarator} VariableDeclarator
  * @typedef {import("estree").VariableDeclaration} VariableDeclaration
@@ -45,6 +46,18 @@ export function expressionStatement(expression) {
     type: "ExpressionStatement",
     expression,
   };
+}
+
+/**
+ * 
+ * @param   {(Property|SpreadElement)[]} properties
+ * @returns {ObjectExpression}
+ */
+export function objectExpression(properties = []) {
+  return {
+    type: "ObjectExpression",
+    properties,
+  }
 }
 
 /**
