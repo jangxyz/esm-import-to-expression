@@ -1,6 +1,6 @@
 import * as assert from "node:assert";
 
-import esmToTopLevelAwait from "../../esm_to_top_level_await.js";
+import esmToTopLevelAwait from "../../esm_import_to_expression.js";
 import {
   code,
   stringify,

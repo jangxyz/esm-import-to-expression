@@ -1,6 +1,6 @@
 {
-  "name": "jangxyz-esm-to-cjs-clipboard",
-  "displayName": "esm-to-cjs-clipboard",
+  "name": "esm-import-to-expression",
+  "displayName": "esm-import-to-expression",
   "description": "Copy esm import source code to commonjs require",
   "version": "0.0.1",
   "engines": {
@@ -14,8 +14,8 @@
   "contributes": {
     "commands": [
       {
-        "command": "jangxyz-esm-to-cjs-clipboard.helloWorld",
-        "title": "Copy ESM imports to CommonJS requires into clipboard"
+        "command": "esm-import-expression.copy-as-import-expression",
+        "title": "Copy ESM import statements as dynamic import expressions into clipboard"
       }
     ]
   },

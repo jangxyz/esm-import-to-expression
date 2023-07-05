@@ -429,3 +429,14 @@ function check_ExportDefaultDeclaration(
 
   return true;
 }
+
+//
+// main
+
+import * as url from "node:url";
+if (
+  process.argv[1] === url.fileURLToPath(import.meta.url) &&
+  import.meta.url.startsWith("file:")
+) {
+  console.log(process.argv);
+}

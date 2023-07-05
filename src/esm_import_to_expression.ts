@@ -1,33 +1,23 @@
 import { walk } from "estree-walker";
 
-import { buildSource, parseSource, stripPosition } from "./est_helper.js";
+import { buildSource, parseSource } from "./est_helper.js";
 import {
-  assignmentExpression,
   assignmentProperty,
   awaitExpression,
-  callExpression,
-  expressionStatement,
   importExpression,
-  memberExpression,
-  objectExpression,
   objectPattern,
   variableDeclaration,
   variableDeclarator,
 } from "./est_builder.js";
 import type {
-  AssignmentExpression,
   Directive,
   ExportAllDeclaration,
   ExportDefaultDeclaration,
   ExportNamedDeclaration,
-  FunctionDeclaration,
-  FunctionExpression,
-  Identifier,
   ImportDeclaration,
   ImportDefaultSpecifier,
   ImportNamespaceSpecifier,
   ImportSpecifier,
-  MemberExpression,
   ModuleDeclaration,
   Node,
   Program,
@@ -36,7 +26,9 @@ import type {
 
 type Body = Directive | Statement | ModuleDeclaration;
 
-export default function esmToCjs(source: string): string {
+export default function esmImportStatementsToDynamicExpressions(
+  source: string
+): string {
   let tree = parseSource(source, { sourceType: "module" });
   tree = convert_ImportDeclaration_to_VariableDeclaration(tree);
 
@@ -260,3 +252,5 @@ function check_ExportDefaultDeclaration(
 
   return true;
 }
+
+// main
