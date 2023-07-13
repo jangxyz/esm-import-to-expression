@@ -1,0 +1,25 @@
+{
+  "name": "esm-import-to-expression",
+  "version": "0.1.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest"
+  },
+  "author": "Kim, Jang-hwan <janghwan@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "est-builder": "github:jangxyz/est-builder#package",
+    "estree-walker": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/common-tags": "^1.8.1",
+    "@types/estree": "^1.0.1",
+    "common-tags": "^1.8.2",
+    "typescript": "^5.1.6",
+    "vitest": "^0.32.2"
+  }
+}
