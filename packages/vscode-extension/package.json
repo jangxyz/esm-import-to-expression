@@ -1,6 +1,6 @@
 {
   "name": "esm-import-to-expression",
-  "displayName": "esm-import-to-expression",
+  "displayName": "ESM import to expression",
   "description": "Copy esm import source code to commonjs require",
   "version": "0.0.1",
   "engines": {
@@ -14,7 +14,7 @@
   "contributes": {
     "commands": [
       {
-        "command": "esm-import-expression.copy-as-import-expression",
+        "command": "jangxyz-esm-import-expression.copy-as-import-expression",
         "title": "Copy ESM import statements as dynamic import expressions into clipboard"
       }
     ]

@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { basename } from "node:path";
-import convert from "../out/esm_to_top_level_await.js";
+import convert from "../out/esm_import_to_expression.js";
 
 let data = "";
 

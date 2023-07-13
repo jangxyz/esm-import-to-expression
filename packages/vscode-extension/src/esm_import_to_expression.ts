@@ -40,7 +40,7 @@ export default function esmImportStatementsToDynamicExpressions(
  *
  * @example
  *   'import foo from "mod";'
- *   => 'const foo = require("mod")'
+ *   => 'const foo = await import("mod")'
  *
  */
 function convert_ImportDeclaration_to_VariableDeclaration(
