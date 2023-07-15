@@ -36,7 +36,12 @@
 		<div class="container output">
 			<label for="output">Output:</label>
 			<div class="text-wrapper">
-				<textarea id="output" value={source2} readonly />
+				<textarea
+					id="output"
+					value={source2}
+					readonly
+					placeholder={source ? 'Now press the Convert button.' : ''}
+				/>
 			</div>
 			<footer>
 				<!--  -->
@@ -88,6 +93,7 @@
 
 		display: flex;
 		flex-direction: column;
+		gap: 10px;
 	}
 
 	.text-wrapper {
@@ -97,7 +103,7 @@
 		flex: 0 0 60px;
 	}
 	footer {
-		padding: 20px 10px;
+		padding: 0px 0px;
 		display: flex;
 		justify-content: space-between;
 	}
