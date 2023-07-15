@@ -1,0 +1,1 @@
+{"version":3,"file":"esm_to_cjs.chatgpt.js","sourceRoot":"","sources":["esm_to_cjs.chatgpt.ts"],"names":[],"mappings":"AAAA,MAAM,CAAC,OAAO,UAAU,QAAQ,CAAC,IAAY;IAC3C,MAAM,WAAW,GAAG,2CAA2C,CAAC;IAChE,MAAM,eAAe,GAAG,IAAI,CAAC,OAAO,CAAC,WAAW,EAAE,0BAA0B,CAAC,CAAC;IAC9E,OAAO,eAAe,CAAC;AACzB,CAAC"}
