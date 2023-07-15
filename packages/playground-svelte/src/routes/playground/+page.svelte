@@ -1,6 +1,12 @@
 <script>
+	import esmImportExpression from 'esm-import-to-expression';
+
 	export let source = '';
-	$: source2 = source;
+	let source2 = '';
+
+	function handleSubmit() {
+		source2 = esmImportExpression(source);
+	}
 </script>
 
 <div class="page">
@@ -11,7 +17,7 @@
 	<p>Convert ESM import statements to import function calls.</p>
 
 	<main>
-		<form class="container input">
+		<form class="container input" on:submit|preventDefault={handleSubmit}>
 			<label for="input">Input:</label>
 			<div class="text-wrapper">
 				<textarea id="input" bind:value={source} />
